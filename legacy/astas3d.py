@@ -84,11 +84,12 @@ C_WATER_L      = ( 95, 165, 235)
 
 REQUEST_QUIT = False
 REQUEST_RESTART = False
+REQUEST_ALGO_MENU = False
 
 
-def _poll_control_events() -> None:
+def _poll_control_events(*, game_over: bool = False) -> None:
     """Captura eventos de controle mesmo durante fases de busca."""
-    global REQUEST_QUIT, REQUEST_RESTART
+    global REQUEST_QUIT, REQUEST_RESTART, REQUEST_ALGO_MENU
     for event in pygame.event.get((pygame.QUIT, pygame.KEYDOWN)):
         if event.type == pygame.QUIT:
             REQUEST_QUIT = True
@@ -97,6 +98,9 @@ def _poll_control_events() -> None:
                 REQUEST_QUIT = True
             elif event.key == pygame.K_r:
                 REQUEST_RESTART = True
+            elif game_over and event.key in (pygame.K_m, pygame.K_n):
+                # M ou N: voltar à escolha A* / gulosa (tratado em scripts/arena_pygame.py).
+                REQUEST_ALGO_MENU = True
 
 
 def _configure_display_geometry() -> tuple[int, int]:
@@ -780,9 +784,10 @@ def run_game(algorithm="astar"):
     )
     if not pygame.get_init():
         pygame.init()
-    global REQUEST_QUIT, REQUEST_RESTART
+    global REQUEST_QUIT, REQUEST_RESTART, REQUEST_ALGO_MENU
     REQUEST_QUIT = False
     REQUEST_RESTART = False
+    REQUEST_ALGO_MENU = False
 
     width, height = _configure_display_geometry()
     screen = pygame.display.set_mode((width, height))
@@ -839,11 +844,13 @@ def run_game(algorithm="astar"):
         dt = clock.tick(FPS)
         pulse += dt * 0.003
 
-        _poll_control_events()
+        _poll_control_events(game_over=game_over)
         if REQUEST_QUIT:
             running = False
         if REQUEST_RESTART:
             return run_game(algorithm=algorithm)
+        if REQUEST_ALGO_MENU:
+            running = False
 
         if not game_over and battery <= 0:
             game_over = True
@@ -1043,13 +1050,18 @@ def run_game(algorithm="astar"):
         )
         draw_legend(screen, small_font)
 
-        hint = small_font.render("ESC sair  ·  R reiniciar", True, (100, 120, 160))
+        hint_txt = (
+            "ESC sair  ·  R reiniciar  ·  M/N outro algoritmo"
+            if game_over
+            else "ESC sair  ·  R reiniciar"
+        )
+        hint = small_font.render(hint_txt, True, (100, 120, 160))
         screen.blit(hint, (WIDTH-hint.get_width()-16, HEIGHT-30))
 
         if game_over:
             draw_message(screen, win_msg, font, WIDTH, HEIGHT)
             quit_hint = small_font.render(
-                "ESC para sair  ·  R para reiniciar",
+                "ESC sair  ·  R reiniciar (mesmo algoritmo)  ·  M ou N escolher A* ou gulosa",
                 True,
                 (200, 210, 225),
             )

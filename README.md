@@ -92,7 +92,7 @@ Mantenha o ambiente virtual **ativo** nos passos seguintes.
 
 ### 4. (Opcional) Arena visual Pygame
 
-Demo sobre o código **legado** (ritmo e água configuráveis no topo de [scripts/arena_pygame.py](scripts/arena_pygame.py)). Ao iniciar, abre-se uma **janela Pygame** para escolher **A\*** ou **busca gulosa** (rato ou teclas **1** / **2**; **ESC** sai).
+Demo sobre o código **legado** (ritmo e água configuráveis no topo de [scripts/arena_pygame.py](scripts/arena_pygame.py)). Ao iniciar, abre-se uma **janela Pygame** para escolher **A\*** ou **busca gulosa**. **Depois de terminar a rota** (vitória ou fim de jogo): **R** reinicia com o mesmo algoritmo; **M** ou **N** voltam ao menu para escolher outro algoritmo; **ESC** fecha.
 
 ```bash
 python3 arena.py
@@ -179,7 +179,3 @@ python3 legacy/plot_results.py
 As figuras PNG ficam em [results/legacy/graficos/](results/legacy/graficos/).
 
 ---
-
-## Contexto académico
-
-A eficiência combina tempo de voo e consumo de energia. As hipóteses de modelagem (grade discreta, tempo discreto, campo de vento por instância, etc.) devem ser explicitadas no relatório final.

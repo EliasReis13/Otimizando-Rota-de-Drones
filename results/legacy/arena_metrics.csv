@@ -2,3 +2,6 @@ instancia,algoritmo,sucesso,custo,tempo_s,nos_expandidos,entregas,max_battery,ma
 1,astar,True,109,40.4216,799,5,60,20,6,5
 1,astar,False,56,25.335,1626,3,60,20,6,5
 1,astar,True,116,36.5152,1505,5,60,20,6,5
+1,astar,True,107,37.267,1552,5,60,20,6,5
+1,greedy,True,32,46.9543,286,5,60,20,6,5
+1,astar,False,16,11.2306,616,1,60,20,6,5

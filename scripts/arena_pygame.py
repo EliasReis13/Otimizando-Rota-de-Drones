@@ -31,8 +31,17 @@ arena_mod.WATER_DENSITY = 0.12  # densidade de água na camada 0 (0.0–1.0).
 _PICK_W, _PICK_H = 720, 420
 
 
+def _ensure_pygame_ready() -> None:
+    """Re-inicializa o Pygame após `run_game` (que chama `pygame.quit()` no legado)."""
+    if not pygame.get_init():
+        pygame.init()
+    if not pygame.font.get_init():
+        pygame.font.init()
+
+
 def _pick_algorithm_gui() -> str:
     """Janela inicial: escolher A* ou gulosa com rato ou teclas 1 / 2."""
+    _ensure_pygame_ready()
     screen = pygame.display.set_mode((_PICK_W, _PICK_H))
     pygame.display.set_caption("Drone — escolha do algoritmo")
 
@@ -72,7 +81,11 @@ def _pick_algorithm_gui() -> str:
         title = title_font.render("Algoritmo de planeamento", True, (220, 230, 245))
         screen.blit(title, (_PICK_W // 2 - title.get_width() // 2, 48))
 
-        sub = hint_font.render("Clique num botão ou pressione 1 (A*) ou 2 (gulosa)  ·  ESC para sair", True, (140, 160, 185))
+        sub = hint_font.render(
+            "Clique ou 1 / 2  ·  ESC sair  ·  Após cada partida: M para voltar aqui",
+            True,
+            (140, 160, 185),
+        )
         screen.blit(sub, (_PICK_W // 2 - sub.get_width() // 2, 100))
 
         for r, label, rgb in (
@@ -107,7 +120,16 @@ def main(argv: list[str] | None = None) -> None:
     pygame.init()
 
     algorithm = args.algorithm if args.algorithm is not None else _pick_algorithm_gui()
-    arena_mod.run_game(algorithm=algorithm)
+
+    while True:
+        arena_mod.run_game(algorithm=algorithm)
+        if arena_mod.REQUEST_QUIT:
+            break
+        if arena_mod.REQUEST_ALGO_MENU:
+            _ensure_pygame_ready()
+            algorithm = _pick_algorithm_gui()
+            continue
+        break
 
 
 if __name__ == "__main__":
