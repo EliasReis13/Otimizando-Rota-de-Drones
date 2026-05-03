@@ -1,13 +1,16 @@
-"""Gera graficos comparativos a partir de `resultados.json` (legacy)."""
+"""Gera graficos comparativos a partir do JSON do benchmark legacy."""
 
 import json
 import os
 import sys
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
- 
-RESULTS_FILE = "resultados.json"
-OUTPUT_DIR   = "graficos"
+
+ROOT = Path(__file__).resolve().parents[1]
+RESULTS_FILE = str(ROOT / "results" / "legacy" / "benchmark.json")
+OUTPUT_DIR = str(ROOT / "results" / "legacy" / "graficos")
  
 CORES  = {"astar": "#4C9BE8", "greedy": "#E8784C"}
 LABELS = {"astar": "A*",      "greedy": "Busca Gulosa"}

@@ -1,11 +1,13 @@
 """Arena legada 3D com visualizacao em Pygame e busca A*/gulosa."""
 
-import pygame
+import csv
+import math
+import os
 import random
 import time
-import math
-import csv
-import os
+from pathlib import Path
+
+import pygame
 from collections import deque
 from simpleai.search import SearchProblem, astar, greedy
 
@@ -23,7 +25,8 @@ R_ZONE_COST         = 3000
 WIND_COST           = 3
 WIN_DELIVERIES      = 5        # quantas entregas para ganhar
 NUM_CHARGE_STATIONS = 6
-CSV_FILE            = "resultados.csv"  # arquivo de saída das métricas
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+CSV_FILE = str(_REPO_ROOT / "results" / "legacy" / "arena_metrics.csv")
 MIN_DIST            = 5        # distância mínima entre pontos gerados
 MAX_BATTERY         = int(MAZE_SIZE * MAZE_SIZE * 0.15)
 
@@ -694,6 +697,7 @@ def save_metrics(algoritmo, sucesso, custo, tempo_s, nos_expandidos, entregas):
       num_entregas_alvo: quantas entregas para ganhar
     """
     _instancia_counter[0] += 1
+    Path(CSV_FILE).parent.mkdir(parents=True, exist_ok=True)
     file_exists = os.path.isfile(CSV_FILE)
     with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=[
@@ -735,6 +739,11 @@ def run_game(algorithm="astar"):
     Returns:
         Tupla `(score, deliveries, steps)` com resultado final da partida.
     """
+    algorithm = (
+        "astar"
+        if str(algorithm).lower().strip() == "astar"
+        else "greedy"
+    )
     if not pygame.get_init():
         pygame.init()
     global REQUEST_QUIT, REQUEST_RESTART
@@ -808,7 +817,7 @@ def run_game(algorithm="astar"):
             game_over_since = time.perf_counter()
             elapsed_fail = time.perf_counter() - start_time
             win_msg   = "SEM BATERIA! DRONE PERDIDO."
-            save_metrics("astar", False, score, elapsed_fail,
+            save_metrics(algorithm, False, score, elapsed_fail,
                          total_nodes_expanded, deliveries)
 
         if not game_over and not action_queue:
@@ -865,7 +874,7 @@ def run_game(algorithm="astar"):
                 game_over_since = time.perf_counter()
                 elapsed_fail = time.perf_counter() - start_time
                 win_msg   = "SEM CAMINHO!"
-                save_metrics("astar", False, score, elapsed_fail,
+                save_metrics(algorithm, False, score, elapsed_fail,
                              total_nodes_expanded, deliveries)
 
         if not game_over and action_queue:
@@ -906,7 +915,7 @@ def run_game(algorithm="astar"):
                             elapsed   = time.perf_counter() - start_time
                             win_msg   = (f"VITÓRIA! {deliveries} entregas | "
                                          f"{score:+d} pts | {elapsed:.1f}s")
-                            save_metrics("astar", True, score, elapsed,
+                            save_metrics(algorithm, True, score, elapsed,
                                          total_nodes_expanded, deliveries)
                         else:
                             collect_pos, goal_pos, restricted_zone = generate_cycle(
@@ -946,7 +955,7 @@ def run_game(algorithm="astar"):
                             elapsed   = time.perf_counter() - start_time
                             win_msg   = (f"VITÓRIA! {deliveries} entregas | "
                                          f"{score:+d} pts | {elapsed:.1f}s")
-                            save_metrics("astar", True, score, elapsed,
+                            save_metrics(algorithm, True, score, elapsed,
                                          total_nodes_expanded, deliveries)
                         else:
                             collect_pos, goal_pos, restricted_zone = generate_cycle(

@@ -1,25 +1,37 @@
 """Executa experimentos legacy em lote com uma instancia visual inicial."""
 
 import json
-import random
-import time
 import os
+import random
+import sys
+import time
+from pathlib import Path
 
 import pygame
 
-MAX_TIME_PER_INSTANCE = 5 
-from astas3d import (
-    generate_map, generate_cycle,
-    a_star_3d, DroneProblem,
-    MAZE_SIZE, NUM_CHARGE_STATIONS, MIN_DIST,
-    MAX_BATTERY, WIN_DELIVERIES,
-    R_ZONE_COST, WIND_COST,
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+MAX_TIME_PER_INSTANCE = 5
+from legacy.astas3d import (
+    DroneProblem,
+    MAZE_SIZE,
+    MAX_BATTERY,
+    MIN_DIST,
+    NUM_CHARGE_STATIONS,
+    R_ZONE_COST,
+    WIND_COST,
+    WIN_DELIVERIES,
+    a_star_3d,
+    generate_cycle,
+    generate_map,
     run_game,
 )
 
 NUM_INSTANCES = 500
-ALGORITHMS    = ["astar", "greedy"]
-RESULTS_FILE  = "resultados.json"
+ALGORITHMS = ["astar", "greedy"]
+RESULTS_FILE = str(ROOT / "results" / "legacy" / "benchmark.json")
 
 
 def _setup_headless_pygame() -> None:
@@ -301,6 +313,7 @@ def main():
             result["instancia"] = instance_num
             results.append(result)
 
+    Path(RESULTS_FILE).parent.mkdir(parents=True, exist_ok=True)
     with open(RESULTS_FILE, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
 
@@ -319,7 +332,7 @@ def main():
         print(f"    Tempo médio:     {t_med:.3f}s")
         print(f"    Nós médios:      {n_med:.0f}")
 
-    print(f"\n  Execute: python plot_results.py\n")
+    print(f"\n  Gráficos: python3 legacy/plot_results.py\n")
 
 
 if __name__ == "__main__":

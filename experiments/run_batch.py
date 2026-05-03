@@ -9,9 +9,9 @@ Fatias experimentais (coluna experiment_slice):
 - no_tnfz: sem zonas temporárias
 - low_battery: autonomia inicial baixa (força paradas em estações)
 
-Uso (na raiz do repositório):
-    python experiments/run_batch.py
-    python experiments/run_batch.py --output results/meu_lote.csv
+Uso (a partir da raiz do repositório, com o ambiente virtual ativo):
+    python3 experiments/run_batch.py
+    python3 experiments/run_batch.py --output results/meu_lote.csv
 """
 
 from __future__ import annotations
