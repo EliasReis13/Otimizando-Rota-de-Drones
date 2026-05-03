@@ -36,7 +36,7 @@ Fluxo lógico do núcleo `src/`:
 - **Busca gulosa** (`greedy`)
 - **A\*** (`astar`)
 
-**Demo Pygame (legado, fora do núcleo final):** em [legacy/astas3d.py](legacy/astas3d.py) o planejador usa `astar` ou `greedy` conforme o parâmetro `algorithm`. [scripts/arena_pygame.py](scripts/arena_pygame.py) e o atalho [arena.py](arena.py) chamam por omissão `astar`. [legacy/run.py](legacy/run.py) compara em lote `astar` e `greedy` no modelo antigo.
+**Demo Pygame (legado, fora do núcleo final):** em [legacy/astas3d.py](legacy/astas3d.py) o planejador usa `astar` ou `greedy`. [scripts/arena_pygame.py](scripts/arena_pygame.py) (e [arena.py](arena.py)) abrem primeiro uma **janela de escolha** entre A* e busca gulosa; opcionalmente `--algorithm` / `-a` salta esse menu (útil em scripts). [legacy/run.py](legacy/run.py) compara em lote `astar` e `greedy` no modelo antigo.
 
 ### O que o enunciado em `docs/request.pdf` deixa explícito (texto)
 
@@ -92,7 +92,7 @@ Mantenha o ambiente virtual **ativo** nos passos seguintes.
 
 ### 4. (Opcional) Arena visual Pygame
 
-Demo sobre o código **legado** (A\* por omissão; ritmo e água configuráveis em [scripts/arena_pygame.py](scripts/arena_pygame.py)):
+Demo sobre o código **legado** (ritmo e água configuráveis no topo de [scripts/arena_pygame.py](scripts/arena_pygame.py)). Ao iniciar, abre-se uma **janela Pygame** para escolher **A\*** ou **busca gulosa** (rato ou teclas **1** / **2**; **ESC** sai).
 
 ```bash
 python3 arena.py
@@ -104,11 +104,11 @@ Equivalente:
 python3 scripts/arena_pygame.py
 ```
 
-Busca **gulosa** na mesma arena (a demo legada só integra A\* e gulosa no Pygame):
+Para **saltar o menu** e fixar o algoritmo (automação / terminal):
 
 ```bash
 python3 scripts/arena_pygame.py --algorithm greedy
-# ou: python3 arena.py -a greedy
+python3 arena.py -a astar
 ```
 
 Para **BFS, DFS, UCS** e comparação dos cinco algoritmos no modelo do trabalho, use o lote em [experiments/run_batch.py](experiments/run_batch.py) (não estão ligados à arena Pygame).
@@ -124,7 +124,7 @@ python3 experiments/demo_compare_3d.py --algorithm greedy
 
 ### 5. Experimento em lote (cinco algoritmos, ≥50 instâncias)
 
-Gera CSV com quatro fatias experimentais (`baseline`, `no_wind`, `no_tnfz`, `low_battery`):
+Gera CSV com quatro cenários de teste (`baseline`, `no_wind`, `no_tnfz`, `low_battery`):
 
 ```bash
 python3 experiments/run_batch.py
@@ -138,7 +138,7 @@ Opções úteis:
 python3 experiments/run_batch.py --output results/outro.csv --timeout 45
 ```
 
-`--timeout` é o limite de tempo de parede, em segundos, por algoritmo e por instância.
+`--timeout` é o tempo máximo de execução (relógio real), em segundos, por algoritmo e por instância.
 
 ### 6. Relatório HTML
 

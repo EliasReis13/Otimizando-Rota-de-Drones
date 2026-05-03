@@ -1,6 +1,6 @@
 """
-Gera results/report.html — visão agregada do CSV (taxa de sucesso, tempos médios,
-nós visitados) e tabela completa com destaque para falhas.
+Gera results/report.html — visão agregada do CSV (taxa de sucesso, tempos médios de
+execução, estados analisados) e tabela completa com destaque para falhas.
 
 Uso (a partir da raiz do repositório):
     python3 experiments/generate_report.py
@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Descrições das fatias experimentais (alinhado a experiments/run_batch.py)
+# Descrições dos cenários de teste (códigos em experiment_slice; alinhado a run_batch.py)
 SLICE_DESCRIPTIONS: dict[str, str] = {
     "baseline": (
         "Cenário de referência: vento ativo, zonas TNFZ (temporariamente restritas) e bateria inicial "
@@ -56,7 +56,7 @@ ALGO_CHART_COLORS: dict[str, str] = {
     "astar": "#81c784",
 }
 
-# Rótulos curtos para a coluna «Cenário» na tabela detalhada
+# Rótulos curtos para a coluna «Resumo da condição» na tabela detalhada
 SLICE_SHORT_LABELS: dict[str, str] = {
     "baseline": "Referência: vento + TNFZ + bateria confortável",
     "no_wind": "Sem vento (resto como baseline)",
@@ -85,7 +85,7 @@ def load_rows(path: Path) -> list[dict[str, str]]:
 
 
 def aggregate(rows: list[dict[str, str]]):
-    """Por algoritmo: sucessos, tempos e nós (média só onde success)."""
+    """Por algoritmo: sucessos, tempos de execução e estados analisados (média só com sucesso)."""
     by_algo = defaultdict(lambda: {"ok": 0, "n": 0, "times": [], "nodes": [], "costs": []})
     by_slice = defaultdict(lambda: {"ok": 0, "n": 0})
     for r in rows:
@@ -175,7 +175,7 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
 
     slice_rows = []
     for sl, d in sorted(by_slice.items()):
-        desc = SLICE_DESCRIPTIONS.get(sl, "Fatia não catalogada neste glossário.")
+        desc = SLICE_DESCRIPTIONS.get(sl, "Cenário de teste não catalogado neste glossário.")
         desc_esc = html.escape(desc)
         pct = 100.0 * d["ok"] / d["n"] if d["n"] else 0.0
         slice_rows.append(
@@ -237,17 +237,28 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
     }}
     h1 {{ font-size: 1.75rem; margin-bottom: 0.25rem; }}
     .sub {{ color: var(--muted); margin-bottom: 28px; }}
-    .grid {{
+    /* Gráficos à parte da tabela de cenários: evita stretch à altura da tabela. */
+    .charts-row {{
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
-      margin-bottom: 32px;
+      align-items: start;
+      margin-bottom: 24px;
+    }}
+    @media (max-width: 1100px) {{
+      .charts-row {{ grid-template-columns: 1fr; }}
+    }}
+    @media (min-width: 701px) and (max-width: 1100px) {{
+      .charts-row {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
     }}
     .card {{
       background: var(--card);
       border-radius: 12px;
       padding: 20px 22px;
       border: 1px solid rgba(255,255,255,.06);
+    }}
+    .card-table {{
+      margin-bottom: 32px;
     }}
     .card h2 {{ font-size: 1rem; margin: 0 0 12px; color: var(--accent); }}
     table.summary {{ width: 100%; border-collapse: collapse; font-size: 0.9rem; }}
@@ -257,7 +268,12 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
       border-bottom: 1px solid rgba(255,255,255,.08);
     }}
     table.summary th {{ color: var(--muted); font-weight: 600; }}
-    .chart {{ width: 100%; max-width: 760px; height: auto; }}
+    .chart {{
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      display: block;
+    }}
     .chart .lab {{ fill: #f2f6fc; font-size: 15px; font-weight: 600; }}
     .chart .val {{ fill: #ffffff; font-size: 14px; font-weight: 600; }}
     .chart-title {{ fill: #b8c9dc; font-size: 14px; font-weight: 600; }}
@@ -323,14 +339,14 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
   <p class="sub">Gerado a partir do CSV de experimentos — use no relatório ou na apresentação.</p>
 
   <p class="explain">
-    Os gráficos por <strong>algoritmo</strong> agregam <em>todas</em> as fatias e seeds do CSV.
-    A tabela <strong>Sucesso por fatia</strong> mostra, para cada cenário experimental, quantas execuções
-    tiveram solução encontrada. Passe o cursor sobre os cabeçalhos da tabela grande ou sobre o código da fatia
+    Os gráficos por <strong>algoritmo</strong> agregam <em>todos</em> os cenários de teste e seeds do CSV.
+    A tabela <strong>Sucesso por cenário de teste</strong> mostra, para cada tipo de condição, quantas execuções
+    encontraram um plano válido. Passe o cursor sobre os cabeçalhos da tabela grande ou sobre o código do cenário
     para ver descrições completas.
   </p>
 
   <section class="glossary">
-    <h2>O que significa cada fatia experimental</h2>
+    <h2>O que significa cada cenário de teste</h2>
     <dl>
       <dt><code>baseline</code></dt>
       <dd>{html.escape(SLICE_DESCRIPTIONS["baseline"])}</dd>
@@ -351,26 +367,26 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
     </dl>
   </section>
 
-  <div class="grid">
+  <div class="charts-row">
     <div class="card">
-      <h2>Taxa de sucesso por algoritmo</h2>
-      {_bar_svg(algos, success_pct, "Sucesso (%)", "%", bar_colors=algo_colors)}
+      <h2>Plano encontrado por algoritmo (% das execuções)</h2>
+      {_bar_svg(algos, success_pct, "Plano encontrado (%)", "%", bar_colors=algo_colors)}
     </div>
     <div class="card">
-      <h2>Tempo médio de parede (s) — só runs com sucesso</h2>
-      {_bar_svg(algos, times, "wall_time_sec", " s", bar_colors=algo_colors)}
+      <h2>Tempo médio de execução (s) — só execuções com sucesso</h2>
+      {_bar_svg(algos, times, "Tempo de execução (s)", " s", bar_colors=algo_colors)}
     </div>
     <div class="card">
-      <h2>Nós visitados (média) — sucesso</h2>
-      {_bar_svg(algos, nodes, "visited_nodes", "", bar_colors=algo_colors)}
+      <h2>Estados analisados (média) — só com sucesso</h2>
+      {_bar_svg(algos, nodes, "Estados analisados", "", bar_colors=algo_colors)}
     </div>
-    <div class="card">
-      <h2>Sucesso por fatia experimental</h2>
-      <table class="summary">
-        <thead><tr><th>Fatia (código)</th><th>O que muda no cenário</th><th>Sucessos / total</th><th>%</th></tr></thead>
-        <tbody>{slice_rows_html}</tbody>
-      </table>
-    </div>
+  </div>
+  <div class="card card-table">
+    <h2>Sucesso por cenário de teste</h2>
+    <table class="summary">
+      <thead><tr><th>Cenário (código)</th><th>O que muda na condição</th><th>Sucessos / total</th><th>%</th></tr></thead>
+      <tbody>{slice_rows_html}</tbody>
+    </table>
   </div>
 
   <h2 style="font-size:1.1rem;margin-bottom:12px;">Todas as execuções</h2>
@@ -379,15 +395,15 @@ def build_html(rows: list[dict[str, str]], by_algo, by_slice) -> str:
       <thead>
         <tr>
           <th title="Identificador da instância pseudoaleatória">Seed</th>
-          <th title="Código da fatia experimental (ver glossário)">Fatia</th>
-          <th title="Resumo do cenário">Cenário</th>
-          <th title="Algoritmo de busca (passe o cursor para descrição)">Algoritmo</th>
-          <th title="Encontrou plano até o objetivo?">Sucesso</th>
-          <th title="Custo do caminho (modelo tempo + energia)">Custo</th>
-          <th title="Número de ações no plano">Passos</th>
-          <th title="Tempo de parede da execução">Tempo (s)</th>
-          <th title="Nós visitados (métrica do simpleai)">Nós</th>
-          <th title="Estourou limite de tempo por algoritmo">Timeout</th>
+          <th title="Código do cenário de teste (ver glossário)">Cenário (código)</th>
+          <th title="Resumo em linguagem simples">Resumo da condição</th>
+          <th title="Estratégia de busca (passe o cursor para descrição)">Algoritmo</th>
+          <th title="Encontrou plano até o objetivo?">Plano encontrado</th>
+          <th title="Custo total do plano (modelo tempo + energia)">Custo</th>
+          <th title="Quantas ações compõem o plano">Nº de ações no plano</th>
+          <th title="Tempo real que o computador levou a correr o algoritmo (segundos)">Tempo de execução (s)</th>
+          <th title="Quantas situações do problema o algoritmo analisou durante a busca">Estados analisados</th>
+          <th title="A execução parou porque atingiu o limite de tempo definido">Parou por limite de tempo</th>
         </tr>
       </thead>
       <tbody>{"".join(table_body)}</tbody>

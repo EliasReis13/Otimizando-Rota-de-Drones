@@ -197,6 +197,10 @@ def _move_time_energy(
 ) -> tuple[float, float]:
     """Calcula tempo e energia de um movimento.
 
+    Para movimento horizontal com vento contrário (``opp > 0``), soma-se
+    ``inst.wind_cost`` à energia — equivalente numérico a ``WIND_COST`` em
+    ``legacy/astas3d.py`` (penalidade fixa extra além de ``wind_energy_scale``).
+
     Args:
         inst: Instancia com parametros de custo.
         dx: Delta de movimento no eixo X.
@@ -212,6 +216,8 @@ def _move_time_energy(
     opp = _wind_opposing(inst, dx, dy, dz, nx, ny, nz)
     dt = 1.0 + inst.wind_time_scale * opp
     de = float(inst.move_battery_base) + inst.wind_energy_scale * opp
+    if dz == 0 and (dx != 0 or dy != 0) and opp > 0:
+        de += inst.wind_cost
     return dt, de
 
 

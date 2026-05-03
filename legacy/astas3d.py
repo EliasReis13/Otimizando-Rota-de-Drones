@@ -36,6 +36,10 @@ OFFSET_Y = HEIGHT // 10 + MAZE_SIZE * TILE_H // 20
 FPS        = 60
 MOVE_DELAY = 0
 
+# Tamanhos de referência (antes do ajuste à janela em `_sync_isometric_from_window`).
+_DES_TILE_W, _DES_TILE_H = 64, 28
+_DES_WALL_H, _DES_PLAYER_H, _DES_TREASURE_H = 30, 30, 24
+
 HEIGHT_PER_LEVEL = {
     0: 0,
     1: (TILE_H // 2) + WALL_H,
@@ -113,7 +117,37 @@ def _configure_display_geometry() -> tuple[int, int]:
     HEIGHT = min(max_h, ideal_h)
     OFFSET_X = WIDTH // 2
     OFFSET_Y = max(80, HEIGHT // 12)
+    _sync_isometric_from_window()
     return WIDTH, HEIGHT
+
+
+def _sync_isometric_from_window() -> None:
+    """Escala grelha isométrica ao tamanho da janela (mais margem, menos 'colado')."""
+    global TILE_W, TILE_H, WALL_H, PLAYER_H, TREASURE_H, HEIGHT_PER_LEVEL, OFFSET_X, OFFSET_Y
+
+    margin_x, margin_y = 220, 280
+    hw, hh = _DES_TILE_W // 2, _DES_TILE_H // 2
+    span_x = (2 * MAZE_SIZE + 2) * hw + _DES_TILE_W
+    span_y = (2 * MAZE_SIZE + 6) * hh + 3 * _DES_WALL_H + 120
+    scale = min(
+        0.88,
+        (WIDTH - margin_x) / max(1, span_x),
+        (HEIGHT - margin_y) / max(1, span_y),
+    )
+    scale = max(0.62, min(scale, 1.0))
+    TILE_W = max(40, int(round(_DES_TILE_W * scale)))
+    TILE_H = max(18, int(round(_DES_TILE_H * scale)))
+    WALL_H = max(16, int(round(_DES_WALL_H * scale)))
+    PLAYER_H = max(18, int(round(_DES_PLAYER_H * scale)))
+    TREASURE_H = max(14, int(round(_DES_TREASURE_H * scale)))
+    HEIGHT_PER_LEVEL = {
+        0: 0,
+        1: (TILE_H // 2) + WALL_H,
+        2: (TILE_H // 2) + WALL_H * 2,
+    }
+    OFFSET_X = WIDTH // 2
+    OFFSET_Y = max(72, int(HEIGHT * 0.12))
+
 
 def to_screen(col, row, height=0):
     sx = OFFSET_X + (col - row) * (TILE_W // 2)
@@ -431,7 +465,7 @@ def draw_legend(surface, small_font):
         ("Estacao de carga", C_CHARGE_TOP),
         ("Coleta", C_COLLECT_TOP),
         ("Entrega", C_GOAL_TOP),
-        ("Agua (layer 0)", C_WATER_TOP),
+        ("Agua", C_WATER_TOP),
         ("Vento", (170, 215, 255)),
         ("Zona restrita", (140, 50, 60)),
         ("Parede/obstaculo", C_WALL_TOP),
@@ -791,7 +825,6 @@ def run_game(algorithm="astar"):
 
     running    = True
     game_over  = False
-    game_over_since = None
     win_msg    = ""
     start_time = time.perf_counter()
 
@@ -814,7 +847,6 @@ def run_game(algorithm="astar"):
 
         if not game_over and battery <= 0:
             game_over = True
-            game_over_since = time.perf_counter()
             elapsed_fail = time.perf_counter() - start_time
             win_msg   = "SEM BATERIA! DRONE PERDIDO."
             save_metrics(algorithm, False, score, elapsed_fail,
@@ -871,7 +903,6 @@ def run_game(algorithm="astar"):
                 action_queue = result
             else:
                 game_over = True
-                game_over_since = time.perf_counter()
                 elapsed_fail = time.perf_counter() - start_time
                 win_msg   = "SEM CAMINHO!"
                 save_metrics(algorithm, False, score, elapsed_fail,
@@ -911,7 +942,6 @@ def run_game(algorithm="astar"):
 
                         if deliveries >= WIN_DELIVERIES:
                             game_over = True
-                            game_over_since = time.perf_counter()
                             elapsed   = time.perf_counter() - start_time
                             win_msg   = (f"VITÓRIA! {deliveries} entregas | "
                                          f"{score:+d} pts | {elapsed:.1f}s")
@@ -951,7 +981,6 @@ def run_game(algorithm="astar"):
 
                         if deliveries >= WIN_DELIVERIES:
                             game_over = True
-                            game_over_since = time.perf_counter()
                             elapsed   = time.perf_counter() - start_time
                             win_msg   = (f"VITÓRIA! {deliveries} entregas | "
                                          f"{score:+d} pts | {elapsed:.1f}s")
@@ -1014,13 +1043,13 @@ def run_game(algorithm="astar"):
         )
         draw_legend(screen, small_font)
 
-        hint = small_font.render("R = reiniciar", True, (100,120,160))
+        hint = small_font.render("ESC sair  ·  R reiniciar", True, (100, 120, 160))
         screen.blit(hint, (WIDTH-hint.get_width()-16, HEIGHT-30))
 
         if game_over:
             draw_message(screen, win_msg, font, WIDTH, HEIGHT)
             quit_hint = small_font.render(
-                "Encerrando automaticamente em 3s (ESC para sair agora)",
+                "ESC para sair  ·  R para reiniciar",
                 True,
                 (200, 210, 225),
             )
@@ -1028,8 +1057,6 @@ def run_game(algorithm="astar"):
                 quit_hint,
                 (WIDTH // 2 - quit_hint.get_width() // 2, HEIGHT // 2 + 36),
             )
-            if game_over_since is not None and time.perf_counter() - game_over_since >= 3.0:
-                running = False
 
         pygame.display.flip()
 

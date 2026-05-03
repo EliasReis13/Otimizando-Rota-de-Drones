@@ -1,0 +1,4 @@
+instancia,algoritmo,sucesso,custo,tempo_s,nos_expandidos,entregas,max_battery,maze_size,num_estacoes,num_entregas_alvo
+1,astar,True,109,40.4216,799,5,60,20,6,5
+1,astar,False,56,25.335,1626,3,60,20,6,5
+1,astar,True,116,36.5152,1505,5,60,20,6,5

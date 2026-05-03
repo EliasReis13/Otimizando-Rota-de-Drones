@@ -13,6 +13,9 @@ from dataclasses import dataclass
 Cell = tuple[int, int, int]
 WindVec = tuple[int, int, int]
 
+# Penalidade fixa extra com vento contrário (mov. horizontal), alinhada a legacy/astas3d.WIND_COST.
+WIND_COST = 3.0
+
 
 @dataclass(frozen=True)
 class TNFZRegion:
@@ -75,6 +78,7 @@ class UrbanInstance:
     w_energy: float
     wind_time_scale: float
     wind_energy_scale: float
+    wind_cost: float
     recharge_idle_battery: int
     experiment_slice: str = ""
 
@@ -324,6 +328,7 @@ def _try_build(
         w_energy=0.5,
         wind_time_scale=0.35,
         wind_energy_scale=0.45,
+        wind_cost=WIND_COST,
         recharge_idle_battery=1,
         experiment_slice=experiment_slice,
     )

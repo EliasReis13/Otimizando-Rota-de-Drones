@@ -3,7 +3,7 @@ Ponto de entrada “simples” do trabalho prático.
 
 Gera ≥50 instâncias reproduzíveis e exporta CSV com métricas dos cinco algoritmos.
 
-Fatias experimentais (coluna experiment_slice):
+Cenários de teste (coluna experiment_slice):
 - baseline: vento + TNFZ + bateria confortável
 - no_wind: sem campo de vento
 - no_tnfz: sem zonas temporárias
